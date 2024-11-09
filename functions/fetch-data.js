@@ -36,9 +36,9 @@ async function fetchGoogleSheetData() {
 
     } catch (error) {
         if (error.code === 403) {
-            throw new Error('Invalid Google Sheets API key.');
+            throw new Error('Google Sheets API key is invalid or expired.');
         } else if (error.code === 404) {
-            throw new Error('Spreadsheet ID or range not found.');
+            throw new Error('Spreadsheet ID or range not found. Please check the provided values.');
         } else {
             throw new Error(`Error fetching data from Google Sheets: ${error.message}`);
         }
@@ -69,14 +69,19 @@ async function storeDataInAppwrite(data) {
             await database.createDocument('672ea3ba002e71c7a82b', 'collectionID', document);
         } catch (error) {
             success = false;
+            let errorMessage = `Error storing document for ${row[0]}: ${error.message}`;
+
+            // إضافة مزيد من التفاصيل حول الخطأ بناءً على حالة الاستجابة
             if (error.response && error.response.status === 401) {
-                errorMessages.push(`Unauthorized: Invalid Appwrite API key for row with Device ${row[0]}.`);
+                errorMessage = `Unauthorized: Invalid Appwrite API key for row with Device ${row[0]}.`;
             } else if (error.response && error.response.status === 404) {
-                errorMessages.push(`Database or collection ID not found for row with Device ${row[0]}.`);
-            } else {
-                errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
+                errorMessage = `Database or collection ID not found for row with Device ${row[0]}.`;
+            } else if (error.response && error.response.status === 400) {
+                errorMessage = `Bad Request: Invalid data format for row with Device ${row[0]}.`;
             }
-            console.error(`Error storing document for ${row[0]}:`, error);
+
+            errorMessages.push(errorMessage);
+            console.error(errorMessage); // سجل التفاصيل في الكونسول لتتبع الخطأ
         }
     }
 
@@ -106,25 +111,19 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
             };
         } else {
-            // تفاصيل الأخطاء عند عدم اكتمال نقل البيانات
+            // في حالة حدوث خطأ، إرسال التفاصيل عن الأخطاء
             return {
                 statusCode: 500,
-                body: JSON.stringify({ message: 'Data was not fully transferred. See errors.', errors: errorMessages })
+                body: JSON.stringify({ 
+                    message: 'Data was not fully transferred.',
+                    errors: errorMessages 
+                })
             };
         }
 
     } catch (error) {
         // رسائل خطأ تفصيلية حسب المصدر (Google Sheets أو Appwrite)
-        let errorMessage;
-        if (error.message.includes('Google Sheets')) {
-            errorMessage = `Google Sheets Error: ${error.message}`;
-        } else if (error.message.includes('Appwrite')) {
-            errorMessage = `Appwrite Error: ${error.message}`;
-        } else {
-            errorMessage = `Unknown Error: ${error.message}`;
-        }
-
-        console.error('Error in fetch-data function:', error);
+        let errorMessage = `Error in fetch-data function: ${error.message}`;
 
         return {
             statusCode: 500,
