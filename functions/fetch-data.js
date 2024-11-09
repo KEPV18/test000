@@ -16,6 +16,7 @@ client
 
 const database = client.database; // استخدام database مباشرة بدون الحاجة إلى constructor
 
+// دالة جلب البيانات من جوجل شيت
 async function fetchGoogleSheetData() {
     try {
         const res = await sheets.spreadsheets.values.get({
@@ -33,42 +34,60 @@ async function fetchGoogleSheetData() {
     }
 }
 
+// دالة لتخزين البيانات في Appwrite
 async function storeDataInAppwrite(data) {
     let success = true;
     let errorMessages = [];
-    for (let row of data) {
+    let storedDataCount = 0;
+    
+    for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+        const row = data[rowIndex];
+        
+        // تحقق من أن الصف يحتوي على 12 خلية
+        if (row.length < 12) {
+            errorMessages.push(`الصف ${rowIndex + 1} يحتوي على بيانات غير كاملة.`);
+            continue;
+        }
+
+        // بناء المستند الذي سيتم تخزينه
         const document = {
-            Device: row[0],
-            Team: row[1],
-            email: row[2],
-            Name: row[4],
-            Countforallqueues: row[5],
-            Quality: row[6],
-            Countforeachqueue: row[7],
-            QualityperDay: row[8],
-            Countpertoday: row[9],
-            LastSubmission: row[10],
-            lasttask: row[11],
+            Device: row[0] || null,
+            Team: row[1] || null,
+            email: row[2] || null,
+            Name: row[4] || null,
+            Countforallqueues: row[5] || null,
+            Quality: row[6] || null,
+            Countforeachqueue: row[7] || null,
+            QualityperDay: row[8] || null,
+            Countpertoday: row[9] || null,
+            LastSubmission: row[10] || null,
+            lasttask: row[11] || null,
         };
 
+        // تحقق من الحقول الأساسية مثل "Device"، "Team"، و"email" وأنها ليست فارغة
+        if (!document.Device || !document.Team || !document.email || !document.Name) {
+            errorMessages.push(`الصف ${rowIndex + 1} يحتوي على بيانات غير كاملة (يجب أن يحتوي على "Device"، "Team"، "email"، "Name").`);
+            continue;
+        }
+
         try {
-            if (row.length < 12) { // تحقق من أن الصف يحتوي على البيانات الكاملة
-                throw new Error(`الصف ${row[0]} يحتوي على بيانات غير كاملة`);
-            }
+            // تخزين البيانات في Appwrite
             await database.createDocument('672ea3ba002e71c7a82b', document);
+            storedDataCount++;
         } catch (error) {
             success = false;
-            errorMessages.push(`Error storing data for ${row[0]}: ${error.message}`);
+            errorMessages.push(`خطأ في تخزين بيانات الصف ${rowIndex + 1}: ${error.message}`);
         }
     }
 
     if (success) {
-        return { status: 'success', message: 'تم نقل البيانات بنجاح!' };
+        return { status: 'success', message: `تم نقل ${storedDataCount} صفوف بنجاح!` };
     } else {
-        return { status: 'error', message: `تم العثور على أخطاء: ${errorMessages.join(', ')}` };
+        return { status: 'error', message: `تم العثور على الأخطاء: ${errorMessages.join(', ')}` };
     }
 }
 
+// دالة معالج الطلبات
 exports.handler = async function(event, context) {
     try {
         // جلب البيانات من Google Sheets
