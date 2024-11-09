@@ -14,7 +14,6 @@ client.setEndpoint('https://cloud.appwrite.io/v1')
   .setProject('672ea045003d944c6ef4')
   .setKey(process.env.APPWRITE_API_KEY);
 
-// الحصول على الـ Database
 const database = client.database;
 
 async function fetchGoogleSheetData() {
@@ -29,6 +28,8 @@ async function fetchGoogleSheetData() {
 }
 
 async function storeDataInAppwrite(data) {
+    let success = true;
+    let errorMessages = [];
     for (let row of data) {
         const document = {
             Device: row[0],
@@ -45,24 +46,31 @@ async function storeDataInAppwrite(data) {
         };
 
         try {
-            // قم بإنشاء المستند في المجموعة المطلوبة
             await database.createDocument('672ea3ba002e71c7a82b', document);
-            console.log('Data stored successfully in Appwrite');
         } catch (error) {
-            console.error('Error storing data in Appwrite:', error);
+            success = false;
+            errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
         }
     }
+    return { success, errorMessages };
 }
 
 exports.handler = async function(event, context) {
     try {
         const data = await fetchGoogleSheetData();
         if (data.length) {
-            await storeDataInAppwrite(data);
-            return {
-                statusCode: 200,
-                body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
-            };
+            const { success, errorMessages } = await storeDataInAppwrite(data);
+            if (success) {
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
+                };
+            } else {
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({ message: 'Data was not fully transferred. See errors.', errors: errorMessages })
+                };
+            }
         } else {
             return {
                 statusCode: 400,
