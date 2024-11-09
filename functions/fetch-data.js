@@ -64,15 +64,20 @@ async function storeDataInAppwrite(data) {
             lasttask: row[11] || null,
         };
 
+        // تصفية الحقول الفارغة أو غير المقبولة
+        const filteredDocument = Object.fromEntries(
+            Object.entries(document).filter(([key, value]) => value !== null && value !== "" && value !== "غير مقبول")
+        );
+
         // تحقق من الحقول الأساسية مثل "Device"، "Team"، و"email" وأنها ليست فارغة
-        if (!document.Device || !document.Team || !document.email || !document.Name) {
+        if (!filteredDocument.Device || !filteredDocument.Team || !filteredDocument.email || !filteredDocument.Name) {
             errorMessages.push(`الصف ${rowIndex + 1} يحتوي على بيانات غير كاملة (يجب أن يحتوي على "Device"، "Team"، "email"، "Name").`);
             continue;
         }
 
         try {
             // تخزين البيانات في Appwrite
-            await database.createDocument('672ea3ba002e71c7a82b', document);
+            await database.createDocument('672ea3ba002e71c7a82b', filteredDocument);
             storedDataCount++;
         } catch (error) {
             success = false;
