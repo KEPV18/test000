@@ -4,8 +4,8 @@ const sdk = require('node-appwrite');
 // إعداد الاتصال بـ Google Sheets API
 const sheets = google.sheets('v4');
 const apiKey = process.env.GOOGLE_API_KEY;
-const spreadsheetId = '1yhnXFDyMyCwFP0ttUKG_h9Egw4lrKaJ0HMUR40fQRiY';
-const range = 'tracking(M)!A1:Z';
+const spreadsheetId = 'AIzaSyDctNVWQhbsQMEDfJDXI30emaTd8mtviEY';
+const range = 'tracking(M)!A3:Z';
 
 // إعداد اتصال بـ Appwrite
 const client = new sdk.Client();
@@ -45,17 +45,17 @@ async function storeDataInAppwrite(data) {
         
         // بناء المستند الذي سيتم تخزينه
         const document = {
-           Device: String(row[0] || '0'),
-    Team: String(row[1] || '0'),
-    email: String(row[2] || '0'),
-    Name: String(row[4] || '0'),
-    Countforallqueues: String(row[5] || '0'),
-    Quality: String(row[6] || '0'),
-    Countforeachqueue: String(row[7] || '0'),
-    QualityperDay: String(row[8] || '0'),
-    Countpertoday: String(row[9] || '0'),
-    LastSubmission: String(row[10] || '0'),
-    lasttask: String(row[11] || '0'),
+           Device: String(row[0] || '0'),  // Column A
+           Team: String(row[1] || '0'),    // Column B
+           email: String(row[2] || '0'),   // Column C
+           Name: String(row[5] || '0'),    // Column F (Name)
+           Countforallqueues: String(row[6] || '0'), // Column G (Countforallqueues)
+           Quality: String(row[7] || '0'), // Column H (Quality)
+           Countforeachqueue: String(row[11] || '0'), // Column L (Countforeachqueue)
+           QualityperDay: String(row[12] || '0'), // Column M (QualityperDay)
+           Countpertoday: String(row[13] || '0'), // Column N (Countpertoday)
+           LastSubmission: String(row[24] || '0'), // Column X (LastSubmission)
+           lasttask: String(row[25] || '0'), // Column Y (lasttask)
         };
 
         // تصفية الحقول الفارغة أو غير المقبولة
