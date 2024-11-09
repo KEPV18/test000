@@ -46,10 +46,12 @@ async function storeDataInAppwrite(data) {
         };
 
         try {
+            // تأكد من عملية تخزين البيانات في Appwrite
             await database.createDocument('672ea3ba002e71c7a82b', document);
         } catch (error) {
             success = false;
             errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
+            console.error(`Error storing document for ${row[0]}:`, error); // إضافة تفاصيل الخطأ في الكونسول
         }
     }
     return { success, errorMessages };
@@ -66,6 +68,7 @@ exports.handler = async function(event, context) {
                     body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
                 };
             } else {
+                // إرسال التفاصيل حول الأخطاء للمستخدم
                 return {
                     statusCode: 500,
                     body: JSON.stringify({ message: 'Data was not fully transferred. See errors.', errors: errorMessages })
