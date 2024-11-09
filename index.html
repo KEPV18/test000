@@ -46,10 +46,13 @@
                     status.textContent = 'تم نقل البيانات بنجاح!';
                     status.className = 'text-center text-green-600';
                 } else {
-                    throw new Error(data.message || 'حدث خطأ أثناء نقل البيانات');
+                    // عرض رسالة الخطأ التفصيلية من API
+                    status.textContent = `فشل في نقل البيانات: ${data.message || 'حدث خطأ غير معروف'}`;
+                    status.className = 'text-center text-red-600';
                 }
             } catch (error) {
-                status.textContent = error.message;
+                // في حالة حدوث خطأ في الاتصال بالخادم
+                status.textContent = `حدث خطأ أثناء الاتصال بالخادم: ${error.message}`;
                 status.className = 'text-center text-red-600';
             } finally {
                 button.disabled = false;
