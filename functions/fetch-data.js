@@ -70,9 +70,9 @@ async function storeDataInAppwrite(data) {
         } catch (error) {
             success = false;
             if (error.response && error.response.status === 401) {
-                errorMessages.push('Unauthorized: Invalid Appwrite API key.');
+                errorMessages.push(`Unauthorized: Invalid Appwrite API key for row with Device ${row[0]}.`);
             } else if (error.response && error.response.status === 404) {
-                errorMessages.push('Database or collection ID not found in Appwrite.');
+                errorMessages.push(`Database or collection ID not found for row with Device ${row[0]}.`);
             } else {
                 errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
             }
