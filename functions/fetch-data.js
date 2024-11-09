@@ -5,7 +5,7 @@ const sdk = require('node-appwrite');
 const sheets = google.sheets('v4');
 const apiKey = process.env.GOOGLE_API_KEY;
 const spreadsheetId = '1EbKvgMRzVKucfGuIOUqJbfncI194MNGJO-9ZVmIJnIw';
-const range = 'tracking(M)!A3:Z';
+const range = 'tracking(M)!A3:Y36';
 
 // إعداد اتصال بـ Appwrite
 const client = new sdk.Client();
@@ -34,51 +34,54 @@ async function fetchGoogleSheetData() {
     }
 }
 
-// دالة لتخزين البيانات في Appwrite
-async function storeDataInAppwrite(data) {
+// دالة لتخزين البيانات في Appwrite على دفعات
+async function storeDataInAppwrite(data, batchSize = 10) {
     let success = true;
     let errorMessages = [];
     let storedDataCount = 0;
-    
-    for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
-        const row = data[rowIndex];
-        
-        // بناء المستند الذي سيتم تخزينه
-        const document = {
-           Device: String(row[0] || '0'),  // Column A
-           Team: String(row[1] || '0'),    // Column B
-           email: String(row[2] || '0'),   // Column C
-           Name: String(row[5] || '0'),    // Column F (Name)
-           Countforallqueues: String(row[6] || '0'), // Column G (Countforallqueues)
-           Quality: String(row[7] || '0'), // Column H (Quality)
-           Countforeachqueue: String(row[11] || '0'), // Column L (Countforeachqueue)
-           QualityperDay: String(row[12] || '0'), // Column M (QualityperDay)
-           Countpertoday: String(row[13] || '0'), // Column N (Countpertoday)
-           LastSubmission: String(row[24] || '0'), // Column X (LastSubmission)
-           lasttask: String(row[25] || '0'), // Column Y (lasttask)
-        };
 
-        // تصفية الحقول الفارغة أو غير المقبولة
-        const filteredDocument = Object.fromEntries(
-            Object.entries(document).filter(([key, value]) => value !== null && value !== "" && value !== "غير مقبول")
-        );
+    for (let i = 0; i < data.length; i += batchSize) {
+        const batch = data.slice(i, i + batchSize);
 
-      console.log(databases); // تحقق مما إذا كان الكائن مُعرّفًا
-      console.log(filteredDocument); // تحقق من بيانات المستند قبل تخزينه
+        for (let rowIndex = 0; rowIndex < batch.length; rowIndex++) {
+            const row = batch[rowIndex];
 
-        try {
-            // تخزين البيانات في Appwrite باستخدام كائن databases
-            await databases.createDocument(
-                '672ea38f00030293896f',  // Database ID
-                '672ea3ba002e71c7a82b',     // Collection ID - يجب إضافة معرف المجموعة الصحيح
-                sdk.ID.unique(),          // إنشاء معرف فريد للمستند
-                filteredDocument
+            // بناء المستند الذي سيتم تخزينه
+            const document = {
+                Device: String(row[0] || '0'),  // Column A
+                Team: String(row[1] || '0'),    // Column B
+                email: String(row[2] || '0'),   // Column C
+                Name: String(row[5] || '0'),    // Column F (Name)
+                Countforallqueues: String(row[6] || '0'), // Column G (Countforallqueues)
+                Quality: String(row[7] || '0'), // Column H (Quality)
+                Countforeachqueue: String(row[11] || '0'), // Column L (Countforeachqueue)
+                QualityperDay: String(row[12] || '0'), // Column M (QualityperDay)
+                Countpertoday: String(row[13] || '0'), // Column N (Countpertoday)
+                LastSubmission: String(row[24] || '0'), // Column X (LastSubmission)
+                lasttask: String(row[25] || '0'), // Column Y (lasttask)
+            };
+
+            // تصفية الحقول الفارغة أو غير المقبولة
+            const filteredDocument = Object.fromEntries(
+                Object.entries(document).filter(([key, value]) => value !== null && value !== "" && value !== "غير مقبول")
             );
-            storedDataCount++;
-        } catch (error) {
-            success = false;
-            errorMessages.push(`خطأ في تخزين بيانات الصف ${rowIndex + 1}: ${error.message}`);
+
+            try {
+                await databases.createDocument(
+                    '672ea38f00030293896f',  // Database ID
+                    '672ea3ba002e71c7a82b',  // Collection ID
+                    sdk.ID.unique(),         // إنشاء معرف فريد للمستند
+                    filteredDocument
+                );
+                storedDataCount++;
+            } catch (error) {
+                success = false;
+                errorMessages.push(`خطأ في تخزين بيانات الصف ${i + rowIndex + 1}: ${error.message}`);
+            }
         }
+
+        // تأخير مؤقت بين الدفعات لتجنب تجاوز المهلة
+        await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     if (success) {
