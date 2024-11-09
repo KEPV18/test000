@@ -45,17 +45,17 @@ async function storeDataInAppwrite(data) {
         
         // بناء المستند الذي سيتم تخزينه
         const document = {
-            Device: row[0] || '0',
-            Team: row[1] || '0',
-            email: row[2] || '0',
-            Name: row[4] || '0',
-            Countforallqueues: isNaN(parseInt(row[5])) ? 0 : parseInt(row[5]),  // تحويل إلى عدد صحيح أو 0 إذا كانت القيمة غير صحيحة
-           Quality: isNaN(parseFloat(row[6])) ? 0.0 : parseFloat(row[6]),  // تحويل إلى عدد عشري أو 0.0 إذا كانت القيمة غير صحيحة
-              Countforeachqueue: isNaN(parseInt(row[7])) ? 0 : parseInt(row[7]),  // تحويل إلى عدد صحيح أو 0 إذا كانت القيمة غير صحيحة
-            QualityperDay: row[8] || '0',
-            Countpertoday: row[9] || '0',
-            LastSubmission: row[10] || '0',
-            lasttask: row[11] || '0',
+           Device: String(row[0] || '0'),
+    Team: String(row[1] || '0'),
+    email: String(row[2] || '0'),
+    Name: String(row[4] || '0'),
+    Countforallqueues: String(row[5] || '0'),
+    Quality: String(row[6] || '0'),
+    Countforeachqueue: String(row[7] || '0'),
+    QualityperDay: String(row[8] || '0'),
+    Countpertoday: String(row[9] || '0'),
+    LastSubmission: String(row[10] || '0'),
+    lasttask: String(row[11] || '0'),
         };
 
         // تصفية الحقول الفارغة أو غير المقبولة
