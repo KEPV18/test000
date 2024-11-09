@@ -10,11 +10,12 @@ const range = 'tracking(M)!A1:Z';
 // إعداد اتصال بـ Appwrite
 const client = new sdk.Client();
 client
-  .setEndpoint('https://cloud.appwrite.io/v1') // وضع عنوان الـ Appwrite الصحيح
-  .setProject('672ea045003d944c6ef4') // وضع معرّف المشروع الصحيح
-  .setKey(process.env.APPWRITE_API_KEY); // وضع مفتاح الـ API الصحيح
+  .setEndpoint('https://cloud.appwrite.io/v1')
+  .setProject('672ea045003d944c6ef4')
+  .setKey(process.env.APPWRITE_API_KEY);
 
-const database = client.database; // استخدام database مباشرة بدون الحاجة إلى constructor
+// إنشاء كائن الـ Databases
+const databases = new sdk.Databases(client);
 
 // دالة جلب البيانات من جوجل شيت
 async function fetchGoogleSheetData() {
@@ -24,7 +25,6 @@ async function fetchGoogleSheetData() {
             range: range,
             key: apiKey,
         });
-
         if (!res.data.values || res.data.values.length === 0) {
             throw new Error('لا توجد بيانات في Google Sheets');
         }
@@ -45,7 +45,7 @@ async function storeDataInAppwrite(data) {
         
         // بناء المستند الذي سيتم تخزينه
         const document = {
-            Device: row[0] || '0', // إذا كانت القيمة مفقودة أو فارغة نقوم بوضع 0
+            Device: row[0] || '0',
             Team: row[1] || '0',
             email: row[2] || '0',
             Name: row[4] || '0',
@@ -64,8 +64,13 @@ async function storeDataInAppwrite(data) {
         );
 
         try {
-            // تخزين البيانات في Appwrite
-            await database.createDocument('672ea3ba002e71c7a82b', filteredDocument);
+            // تخزين البيانات في Appwrite باستخدام كائن databases
+            await databases.createDocument(
+                '672ea38f00030293896f',  // Database ID
+                '672ea3ba002e71c7a82b',     // Collection ID - يجب إضافة معرف المجموعة الصحيح
+                sdk.ID.unique(),          // إنشاء معرف فريد للمستند
+                filteredDocument
+            );
             storedDataCount++;
         } catch (error) {
             success = false;
@@ -85,10 +90,8 @@ exports.handler = async function(event, context) {
     try {
         // جلب البيانات من Google Sheets
         const data = await fetchGoogleSheetData();
-
         // تخزين البيانات في Appwrite
         const result = await storeDataInAppwrite(data);
-
         // إرجاع النتيجة
         return {
             statusCode: 200,
