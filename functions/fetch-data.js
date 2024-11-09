@@ -50,7 +50,7 @@ async function storeDataInAppwrite(data) {
             email: row[2] || '0',
             Name: row[4] || '0',
             Countforallqueues: isNaN(parseInt(row[5])) ? 0 : parseInt(row[5]),  // تحويل إلى عدد صحيح أو 0 إذا كانت القيمة غير صحيحة
-            Quality: row[6] || '0',
+           Quality: isNaN(parseFloat(row[6])) ? 0.0 : parseFloat(row[6]),  // تحويل إلى عدد عشري أو 0.0 إذا كانت القيمة غير صحيحة
             Countforeachqueue: row[7] || '0',
             QualityperDay: row[8] || '0',
             Countpertoday: row[9] || '0',
