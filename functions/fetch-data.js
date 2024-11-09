@@ -63,6 +63,9 @@ async function storeDataInAppwrite(data) {
             Object.entries(document).filter(([key, value]) => value !== null && value !== "" && value !== "غير مقبول")
         );
 
+      console.log(databases); // تحقق مما إذا كان الكائن مُعرّفًا
+      console.log(filteredDocument); // تحقق من بيانات المستند قبل تخزينه
+
         try {
             // تخزين البيانات في Appwrite باستخدام كائن databases
             await databases.createDocument(
