@@ -9,11 +9,12 @@ const range = 'tracking(M)!A1:Z';
 
 // إعداد اتصال بـ Appwrite
 const client = new sdk.Client();
-client.setEndpoint('https://cloud.appwrite.io/v1')
-  .setProject('672ea045003d944c6ef4')
-  .setKey(process.env.APPWRITE_API_KEY);
+client
+  .setEndpoint('https://cloud.appwrite.io/v1') // وضع عنوان الـ Appwrite الصحيح
+  .setProject('672ea045003d944c6ef4') // وضع معرّف المشروع الصحيح
+  .setKey(process.env.APPWRITE_API_KEY); // وضع مفتاح الـ API الصحيح
 
-const database = client.database;
+const database = client.database; // استخدام database مباشرة بدون الحاجة إلى constructor
 
 async function fetchGoogleSheetData() {
     try {
@@ -57,43 +58,37 @@ async function storeDataInAppwrite(data) {
             await database.createDocument('672ea3ba002e71c7a82b', document);
         } catch (error) {
             success = false;
-            errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
-            console.error(`Error storing document for ${row[0]}:`, error);
+            errorMessages.push(`Error storing data for ${row[0]}: ${error.message}`);
         }
     }
-    return { success, errorMessages };
+
+    if (success) {
+        return { status: 'success', message: 'تم نقل البيانات بنجاح!' };
+    } else {
+        return { status: 'error', message: `تم العثور على أخطاء: ${errorMessages.join(', ')}` };
+    }
 }
 
 exports.handler = async function(event, context) {
     try {
+        // جلب البيانات من Google Sheets
         const data = await fetchGoogleSheetData();
-        if (data.length) {
-            const { success, errorMessages } = await storeDataInAppwrite(data);
-            if (success) {
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({ message: 'تم نقل البيانات بنجاح!' })
-                };
-            } else {
-                return {
-                    statusCode: 500,
-                    body: JSON.stringify({
-                        message: 'Data was not fully transferred.',
-                        errors: errorMessages // إرسال تفاصيل الأخطاء للمستخدم
-                    })
-                };
-            }
-        } else {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ message: 'No data found in Google Sheets.' })
-            };
-        }
+
+        // تخزين البيانات في Appwrite
+        const result = await storeDataInAppwrite(data);
+
+        // إرجاع النتيجة
+        return {
+            statusCode: 200,
+            body: JSON.stringify(result),
+        };
     } catch (error) {
-        console.error('Error in fetch-data function:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: `حدث خطأ أثناء جلب البيانات: ${error.message}` })
+            body: JSON.stringify({
+                status: 'error',
+                message: `حدث خطأ: ${error.message}`,
+            }),
         };
     }
 };
