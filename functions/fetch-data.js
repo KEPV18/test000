@@ -10,26 +10,46 @@ const range = 'tracking(M)!A1:Z';
 
 // إعداد اتصال بـ Appwrite
 const client = new sdk.Client();
-client.setEndpoint('https://cloud.appwrite.io/v1')
-  .setProject('672ea045003d944c6ef4')
-  .setKey(process.env.APPWRITE_API_KEY);
+client
+    .setEndpoint('https://cloud.appwrite.io/v1')
+    .setProject('672ea045003d944c6ef4')
+    .setKey(process.env.APPWRITE_API_KEY);
 
-const database = new sdk.Databases(client);
+const database = new sdk.Databases(client); // استخدام كلاس Databases بشكل صحيح
 
+// دالة لجلب البيانات من Google Sheets
 async function fetchGoogleSheetData() {
-    const res = await sheets.spreadsheets.values.get({
-        spreadsheetId: spreadsheetId,
-        range: range,
-        key: apiKey,
-    });
+    try {
+        const res = await sheets.spreadsheets.values.get({
+            spreadsheetId: spreadsheetId,
+            range: range,
+            key: apiKey,
+        });
 
-    const rows = res.data.values;
-    return rows;
+        const rows = res.data.values;
+
+        if (!rows || rows.length === 0) {
+            throw new Error('No data found in the specified range.');
+        }
+
+        return rows;
+
+    } catch (error) {
+        if (error.code === 403) {
+            throw new Error('Invalid Google Sheets API key.');
+        } else if (error.code === 404) {
+            throw new Error('Spreadsheet ID or range not found.');
+        } else {
+            throw new Error(`Error fetching data from Google Sheets: ${error.message}`);
+        }
+    }
 }
 
+// دالة لتخزين البيانات في Appwrite
 async function storeDataInAppwrite(data) {
     let success = true;
     let errorMessages = [];
+
     for (let row of data) {
         const document = {
             Device: row[0],
@@ -46,45 +66,69 @@ async function storeDataInAppwrite(data) {
         };
 
         try {
-            // تأكد من عملية تخزين البيانات في Appwrite
-            await database.createDocument('672ea3ba002e71c7a82b', document);
+            await database.createDocument('672ea3ba002e71c7a82b', 'collectionID', document);
         } catch (error) {
             success = false;
-            errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
-            console.error(`Error storing document for ${row[0]}:`, error); // إضافة تفاصيل الخطأ في الكونسول
+            if (error.response && error.response.status === 401) {
+                errorMessages.push('Unauthorized: Invalid Appwrite API key.');
+            } else if (error.response && error.response.status === 404) {
+                errorMessages.push('Database or collection ID not found in Appwrite.');
+            } else {
+                errorMessages.push(`Error storing document for ${row[0]}: ${error.message}`);
+            }
+            console.error(`Error storing document for ${row[0]}:`, error);
         }
     }
+
     return { success, errorMessages };
 }
 
+// الوظيفة الرئيسية
 exports.handler = async function(event, context) {
     try {
+        // جلب البيانات من Google Sheets
         const data = await fetchGoogleSheetData();
-        if (data.length) {
-            const { success, errorMessages } = await storeDataInAppwrite(data);
-            if (success) {
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
-                };
-            } else {
-                // إرسال التفاصيل حول الأخطاء للمستخدم
-                return {
-                    statusCode: 500,
-                    body: JSON.stringify({ message: 'Data was not fully transferred. See errors.', errors: errorMessages })
-                };
-            }
-        } else {
+
+        // التحقق من وجود بيانات قابلة للنقل
+        if (data.length === 0) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ message: 'No data found in Google Sheets.' })
+                body: JSON.stringify({ message: 'No valid data found in Google Sheets.' })
             };
         }
+
+        // تخزين البيانات في Appwrite
+        const { success, errorMessages } = await storeDataInAppwrite(data);
+
+        if (success) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({ message: 'Data fetched and stored successfully!' })
+            };
+        } else {
+            // تفاصيل الأخطاء عند عدم اكتمال نقل البيانات
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Data was not fully transferred. See errors.', errors: errorMessages })
+            };
+        }
+
     } catch (error) {
+        // رسائل خطأ تفصيلية حسب المصدر (Google Sheets أو Appwrite)
+        let errorMessage;
+        if (error.message.includes('Google Sheets')) {
+            errorMessage = `Google Sheets Error: ${error.message}`;
+        } else if (error.message.includes('Appwrite')) {
+            errorMessage = `Appwrite Error: ${error.message}`;
+        } else {
+            errorMessage = `Unknown Error: ${error.message}`;
+        }
+
         console.error('Error in fetch-data function:', error);
+
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: 'An error occurred while fetching data.' })
+            body: JSON.stringify({ message: errorMessage })
         };
     }
 };
