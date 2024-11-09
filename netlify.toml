@@ -1,6 +1,5 @@
 [build]
   functions = "functions"
-  command = "node index.js"
   publish = "."
 
 [functions]
