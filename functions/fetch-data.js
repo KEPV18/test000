@@ -14,7 +14,7 @@ client.setEndpoint('https://cloud.appwrite.io/v1')
   .setProject('672ea045003d944c6ef4')
   .setKey(process.env.APPWRITE_API_KEY);
 
-const database = new sdk.Database(client);
+const database = new sdk.Databases(client);
 
 async function fetchGoogleSheetData() {
     const res = await sheets.spreadsheets.values.get({
