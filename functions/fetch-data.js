@@ -43,37 +43,25 @@ async function storeDataInAppwrite(data) {
     for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
         const row = data[rowIndex];
         
-        // تحقق من أن الصف يحتوي على 12 خلية
-        if (row.length < 12) {
-            errorMessages.push(`الصف ${rowIndex + 1} يحتوي على بيانات غير كاملة.`);
-            continue;
-        }
-
         // بناء المستند الذي سيتم تخزينه
         const document = {
-            Device: row[0] || null,
-            Team: row[1] || null,
-            email: row[2] || null,
-            Name: row[4] || null,
-            Countforallqueues: row[5] || null,
-            Quality: row[6] || null,
-            Countforeachqueue: row[7] || null,
-            QualityperDay: row[8] || null,
-            Countpertoday: row[9] || null,
-            LastSubmission: row[10] || null,
-            lasttask: row[11] || null,
+            Device: row[0] || '0', // إذا كانت القيمة مفقودة أو فارغة نقوم بوضع 0
+            Team: row[1] || '0',
+            email: row[2] || '0',
+            Name: row[4] || '0',
+            Countforallqueues: row[5] || '0',
+            Quality: row[6] || '0',
+            Countforeachqueue: row[7] || '0',
+            QualityperDay: row[8] || '0',
+            Countpertoday: row[9] || '0',
+            LastSubmission: row[10] || '0',
+            lasttask: row[11] || '0',
         };
 
         // تصفية الحقول الفارغة أو غير المقبولة
         const filteredDocument = Object.fromEntries(
             Object.entries(document).filter(([key, value]) => value !== null && value !== "" && value !== "غير مقبول")
         );
-
-        // تحقق من الحقول الأساسية مثل "Device"، "Team"، و"email" وأنها ليست فارغة
-        if (!filteredDocument.Device || !filteredDocument.Team || !filteredDocument.email || !filteredDocument.Name) {
-            errorMessages.push(`الصف ${rowIndex + 1} يحتوي على بيانات غير كاملة (يجب أن يحتوي على "Device"، "Team"، "email"، "Name").`);
-            continue;
-        }
 
         try {
             // تخزين البيانات في Appwrite
