@@ -14,7 +14,8 @@ client.setEndpoint('https://cloud.appwrite.io/v1')
   .setProject('672ea045003d944c6ef4')
   .setKey(process.env.APPWRITE_API_KEY);
 
-const database = new sdk.Databases(client);
+// الحصول على الـ Database
+const database = client.database;
 
 async function fetchGoogleSheetData() {
     const res = await sheets.spreadsheets.values.get({
@@ -44,6 +45,7 @@ async function storeDataInAppwrite(data) {
         };
 
         try {
+            // قم بإنشاء المستند في المجموعة المطلوبة
             await database.createDocument('672ea3ba002e71c7a82b', document);
             console.log('Data stored successfully in Appwrite');
         } catch (error) {
