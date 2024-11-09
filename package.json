@@ -4,16 +4,8 @@
   "description": "A tool to transfer data from Google Sheets to Appwrite",
   "main": "index.html",
   "scripts": {
-    "start": "netlify dev",
-    "build": "netlify build"
+    "build": "# no build step needed"
   },
-  "keywords": [
-    "google-sheets",
-    "appwrite",
-    "netlify"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "node-appwrite": "^11.1.0",
     "googleapis": "^129.0.0"
