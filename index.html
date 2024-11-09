@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نقل البيانات من Google Sheets إلى Appwrite</title>
-    <!-- استبدال CDN Tailwind بالنسخة المجمعة -->
     <script src="https://cdn.tailwindcss.com/3.4.0/tailwind.min.js"></script>
     <style>
         /* إضافة الأنماط الأساسية */
@@ -18,7 +17,6 @@
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
             <h1 class="text-2xl font-bold text-center mb-6">نقل البيانات من Google Sheets إلى Appwrite</h1>
-            
             <div class="space-y-4">
                 <div id="status" class="text-center text-gray-600">
                     جاهز لنقل البيانات
@@ -53,6 +51,12 @@
                     status.className = 'text-center text-green-600';
                 } else {
                     throw new Error(data.message || 'حدث خطأ أثناء نقل البيانات');
+                }
+
+                if (data.errors) {
+                    status.textContent = 'تم نقل البيانات ولكن حدثت بعض المشاكل. راجع الأخطاء.';
+                    status.className = 'text-center text-yellow-600';
+                    console.error('Errors:', data.errors);  // يمكن طباعة الأخطاء في الكونسول للتدقيق
                 }
             } catch (error) {
                 status.textContent = error.message;
